@@ -1,0 +1,320 @@
+version: '3'
+
+services:
+  traefik:
+    image: traefik:2.7
+    container_name: appwrite-traefik
+    command:
+      - --providers.file.directory=/storage/config
+      - --providers.file.watch=true
+      - --providers.docker=true
+      - --providers.docker.exposedByDefault=false
+      - --providers.docker.constraints=Label(`traefik.constraint-label-stack`,`appwrite`)
+      - --entrypoints.appwrite_web.address=:80
+      - --entrypoints.appwrite_websecure.address=:443
+    ports:
+      - 172.17.0.1:8080:80
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./appwrite/appwrite-config:/storage/config:ro
+      - ./appwrite/appwrite-certificates:/storage/certificates:ro
+    depends_on:
+      - appwrite
+    networks:
+      - gateway
+      - appwrite
+
+  appwrite:
+    container_name: appwrite
+    image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
+    networks:
+      - appwrite
+    labels:
+      - "traefik.enable=true"
+      - "traefik.constraint-label-stack=appwrite"
+      - "traefik.docker.network=appwrite"
+      - "traefik.http.services.appwrite_api.loadbalancer.server.port=80"
+      #http
+      - traefik.http.routers.appwrite_api_http.entrypoints=appwrite_web
+      - traefik.http.routers.appwrite_api_http.rule=PathPrefix(`/`)
+      - traefik.http.routers.appwrite_api_http.service=appwrite_api
+      # https
+      - traefik.http.routers.appwrite_api_https.entrypoints=appwrite_websecure
+      - traefik.http.routers.appwrite_api_https.rule=PathPrefix(`/`)
+      - traefik.http.routers.appwrite_api_https.service=appwrite_api
+      - traefik.http.routers.appwrite_api_https.tls=true
+    volumes:
+      - ./appwrite/appwrite-uploads:/storage/uploads:rw
+      - ./appwrite/appwrite-cache:/storage/cache:rw
+      - ./appwrite/appwrite-config:/storage/config:rw
+      - ./appwrite/appwrite-certificates:/storage/certificates:rw
+      - ./appwrite/appwrite-functions:/storage/functions:rw
+    depends_on:
+      - mariadb
+      - redis
+    env_file:
+      - .env
+
+  appwrite-realtime:
+    entrypoint: realtime
+    container_name: appwrite-realtime
+    image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.constraint-label-stack=appwrite"
+      - "traefik.docker.network=appwrite"
+      - "traefik.http.services.appwrite_realtime.loadbalancer.server.port=80"
+      #ws
+      - traefik.http.routers.appwrite_realtime_ws.entrypoints=appwrite_web
+      - traefik.http.routers.appwrite_realtime_ws.rule=PathPrefix(`/v1/realtime`)
+      - traefik.http.routers.appwrite_realtime_ws.service=appwrite_realtime
+      # wss
+      - traefik.http.routers.appwrite_realtime_wss.entrypoints=appwrite_websecure
+      - traefik.http.routers.appwrite_realtime_wss.rule=PathPrefix(`/v1/realtime`)
+      - traefik.http.routers.appwrite_realtime_wss.service=appwrite_realtime
+      - traefik.http.routers.appwrite_realtime_wss.tls=true
+    networks:
+      - appwrite
+    depends_on:
+      - mariadb
+      - redis
+    env_file:
+      - .env
+
+  appwrite-worker-audits:
+    entrypoint: worker-audits
+    container_name: appwrite-worker-audits
+    image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
+    networks:
+      - appwrite
+    depends_on:
+      - redis
+      - mariadb
+    env_file:
+      - .env
+
+  appwrite-worker-webhooks:
+    entrypoint: worker-webhooks
+    container_name: appwrite-worker-webhooks
+    image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
+    networks:
+      - appwrite
+    depends_on:
+      - redis
+      - mariadb
+    env_file:
+      - .env
+
+  appwrite-worker-deletes:
+    entrypoint: worker-deletes
+    container_name: appwrite-worker-deletes
+    image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
+    networks:
+      - appwrite
+    depends_on:
+      - redis
+      - mariadb
+    volumes: 
+      - ./appwrite/appwrite-uploads:/storage/uploads:rw
+      - ./appwrite/appwrite-cache:/storage/cache:rw
+      - ./appwrite/appwrite-functions:/storage/functions:rw
+      - ./appwrite/appwrite-builds:/storage/builds:rw
+      - ./appwrite/appwrite-certificates:/storage/certificates:rw
+    env_file:
+      - .env
+
+  appwrite-worker-databases:
+    entrypoint: worker-databases
+    container_name: appwrite-worker-databases
+    image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
+    networks:
+      - appwrite
+    depends_on:
+      - redis
+      - mariadb
+    env_file:
+      - .env
+
+  appwrite-worker-builds:
+    entrypoint: worker-builds
+    container_name: appwrite-worker-builds
+    image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
+    networks:
+      - appwrite
+    depends_on:
+      - redis
+      - mariadb
+    env_file:
+      - .env
+
+  appwrite-worker-certificates:
+    entrypoint: worker-certificates
+    container_name: appwrite-worker-certificates
+    image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
+    networks:
+      - appwrite
+    depends_on:
+      - redis
+      - mariadb
+    volumes: 
+      - ./appwrite/appwrite-config:/storage/config:rw
+      - ./appwrite/appwrite-certificates:/storage/certificates:rw
+    env_file:
+      - .env
+
+  appwrite-worker-functions:
+    entrypoint: worker-functions
+    container_name: appwrite-worker-functions
+    image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
+    networks:
+      - appwrite
+    depends_on:
+      - redis
+      - mariadb
+      - appwrite-executor
+    env_file:
+      - .env
+
+  appwrite-executor:
+    container_name: appwrite-executor
+    entrypoint: executor
+    stop_signal: SIGINT
+    image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
+    networks:
+      appwrite:
+      runtimes:
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./appwrite/appwrite-functions:/storage/functions:rw
+      - ./appwrite/appwrite-builds:/storage/builds:rw
+      - /tmp:/tmp:rw
+    depends_on:
+      - redis
+      - mariadb
+      - appwrite
+    env_file:
+      - .env
+
+  appwrite-worker-mails:
+    entrypoint: worker-mails
+    container_name: appwrite-worker-mails
+    image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
+    networks:
+      - appwrite
+    depends_on:
+      - redis
+      - smtp
+    env_file:
+      - .env
+
+  appwrite-worker-messaging:
+    entrypoint: worker-messaging
+    container_name: appwrite-worker-messaging
+    restart: unless-stopped
+    image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
+    networks:
+      - appwrite
+    depends_on:
+      - redis
+    env_file:
+      - .env
+
+  appwrite-maintenance:
+    entrypoint: maintenance
+    container_name: appwrite-maintenance
+    image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
+    networks:
+      - appwrite
+    depends_on:
+      - redis
+    env_file:
+      - .env
+
+  appwrite-usage:
+    entrypoint: usage
+    container_name: appwrite-usage
+    image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
+    networks:
+      - appwrite
+    depends_on:
+      - influxdb
+      - mariadb
+    env_file:
+      - .env
+
+  appwrite-schedule:
+    entrypoint: schedule
+    container_name: appwrite-schedule
+    image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
+    networks:
+      - appwrite
+    depends_on:
+      - redis
+    env_file:
+      - .env
+
+  mariadb:
+    image: mariadb:10.7 # fix issues when upgrading using: mysql_upgrade -u root -p
+    container_name: appwrite-mariadb
+    networks:
+      - appwrite
+    volumes:
+      - ./appwrite/appwrite-mariadb:/var/lib/mysql:rw
+    environment:
+      - MYSQL_ROOT_PASSWORD=${_APP_DB_ROOT_PASS}
+      - MYSQL_DATABASE=${_APP_DB_SCHEMA}
+      - MYSQL_USER=${_APP_DB_USER}
+      - MYSQL_PASSWORD=${_APP_DB_PASS}
+    command: 'mysqld --innodb-flush-method=fsync' # add ' --query_cache_size=0' for DB tests
+    # command: mv /var/lib/mysql/ib_logfile0 /var/lib/mysql/ib_logfile0.bu && mv /var/lib/mysql/ib_logfile1 /var/lib/mysql/ib_logfile1.bu
+
+  smtp:
+    image: appwrite/smtp:1.2.0
+    container_name: appwrite-smtp
+    restart: unless-stopped
+    networks:
+      - appwrite
+    env_file:
+      - .env
+  
+  redis:
+    image: redis:7.0.4-alpine
+    container_name: appwrite-redis
+    networks:
+      - appwrite
+    volumes:
+      - ./appwrite/appwrite-redis:/data:rw
+
+  influxdb:
+    image: appwrite/influxdb:1.5.0
+    container_name: appwrite-influxdb
+    networks:
+      - appwrite
+    volumes:
+      - ./appwrite/appwrite-influxdb:/var/lib/influxdb:rw
+
+  telegraf:
+    image: appwrite/telegraf:1.4.0
+    container_name: appwrite-telegraf
+    networks:
+      - appwrite
+    env_file:
+      - .env
+
+networks:
+  gateway:
+  appwrite:
+  runtimes:
+
+volumes:
+  appwrite-mariadb:
+  appwrite-redis:
+  appwrite-cache:
+  appwrite-uploads:
+  appwrite-certificates:
+  appwrite-functions:
+  appwrite-builds:
+  appwrite-influxdb:
+  appwrite-config:
+  appwrite-executor:
