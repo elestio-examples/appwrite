@@ -102,6 +102,10 @@ environments:
     value: "1209600"
   - key: "_APP_USAGE_STATS"
     value: "enabled"
+  - key: "_APP_EXECUTOR_RUNTIME_NETWORK"
+    value: "[PIPELINE_NAME]"
+  - key: "OPEN_RUNTIMES_NETWORK"
+    value: "[PIPELINE_NAME]"
 
 config:
   runTime: "dockerCompose"
