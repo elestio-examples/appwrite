@@ -103,9 +103,9 @@ environments:
   - key: "_APP_USAGE_STATS"
     value: "enabled"
   - key: "_APP_EXECUTOR_RUNTIME_NETWORK"
-    value: "[PIPELINE_NAME]_runtime"
+    value: "[PIPELINE_NAME]_runtimes"
   - key: "OPEN_RUNTIMES_NETWORK"
-    value: "[PIPELINE_NAME]_runtime"
+    value: "[PIPELINE_NAME]_runtimes"
 
 config:
   runTime: "dockerCompose"
