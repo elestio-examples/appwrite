@@ -4,6 +4,7 @@ services:
   traefik:
     image: traefik:2.7
     container_name: appwrite-traefik
+    restart: always
     command:
       - --providers.file.directory=/storage/config
       - --providers.file.watch=true
@@ -27,6 +28,7 @@ services:
   appwrite:
     container_name: appwrite
     image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
+    restart: always
     networks:
       - appwrite
     labels:
@@ -59,7 +61,7 @@ services:
     entrypoint: realtime
     container_name: appwrite-realtime
     image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
-    restart: unless-stopped
+    restart: always
     labels:
       - "traefik.enable=true"
       - "traefik.constraint-label-stack=appwrite"
@@ -86,6 +88,7 @@ services:
     entrypoint: worker-audits
     container_name: appwrite-worker-audits
     image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
+    restart: always
     networks:
       - appwrite
     depends_on:
@@ -98,6 +101,7 @@ services:
     entrypoint: worker-webhooks
     container_name: appwrite-worker-webhooks
     image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
+    restart: always
     networks:
       - appwrite
     depends_on:
@@ -110,6 +114,7 @@ services:
     entrypoint: worker-deletes
     container_name: appwrite-worker-deletes
     image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
+    restart: always
     networks:
       - appwrite
     depends_on:
@@ -128,6 +133,7 @@ services:
     entrypoint: worker-databases
     container_name: appwrite-worker-databases
     image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
+    restart: always
     networks:
       - appwrite
     depends_on:
@@ -140,6 +146,7 @@ services:
     entrypoint: worker-builds
     container_name: appwrite-worker-builds
     image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
+    restart: always
     networks:
       - appwrite
     depends_on:
@@ -152,6 +159,7 @@ services:
     entrypoint: worker-certificates
     container_name: appwrite-worker-certificates
     image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
+    restart: always
     networks:
       - appwrite
     depends_on:
@@ -167,6 +175,7 @@ services:
     entrypoint: worker-functions
     container_name: appwrite-worker-functions
     image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
+    restart: always
     networks:
       - appwrite
     depends_on:
@@ -181,6 +190,7 @@ services:
     entrypoint: executor
     stop_signal: SIGINT
     image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
+    restart: always
     networks:
       appwrite:
       runtimes:
@@ -200,6 +210,7 @@ services:
     entrypoint: worker-mails
     container_name: appwrite-worker-mails
     image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
+    restart: always
     networks:
       - appwrite
     depends_on:
@@ -211,7 +222,7 @@ services:
   appwrite-worker-messaging:
     entrypoint: worker-messaging
     container_name: appwrite-worker-messaging
-    restart: unless-stopped
+    restart: always
     image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
     networks:
       - appwrite
@@ -224,6 +235,7 @@ services:
     entrypoint: maintenance
     container_name: appwrite-maintenance
     image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
+    restart: always
     networks:
       - appwrite
     depends_on:
@@ -235,6 +247,7 @@ services:
     entrypoint: usage
     container_name: appwrite-usage
     image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
+    restart: always
     networks:
       - appwrite
     depends_on:
@@ -247,6 +260,7 @@ services:
     entrypoint: schedule
     container_name: appwrite-schedule
     image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
+    restart: always
     networks:
       - appwrite
     depends_on:
@@ -257,6 +271,7 @@ services:
   mariadb:
     image: mariadb:10.7 # fix issues when upgrading using: mysql_upgrade -u root -p
     container_name: appwrite-mariadb
+    restart: always
     networks:
       - appwrite
     volumes:
@@ -272,7 +287,7 @@ services:
   smtp:
     image: appwrite/smtp:1.2.0
     container_name: appwrite-smtp
-    restart: unless-stopped
+    restart: always
     networks:
       - appwrite
     env_file:
@@ -281,6 +296,7 @@ services:
   redis:
     image: redis:7.0.4-alpine
     container_name: appwrite-redis
+    restart: always
     networks:
       - appwrite
     volumes:
@@ -289,6 +305,7 @@ services:
   influxdb:
     image: appwrite/influxdb:1.5.0
     container_name: appwrite-influxdb
+    restart: always
     networks:
       - appwrite
     volumes:
@@ -296,6 +313,7 @@ services:
 
   telegraf:
     image: appwrite/telegraf:1.4.0
+    restart: always
     container_name: appwrite-telegraf
     networks:
       - appwrite
