@@ -3,4 +3,4 @@
 
 echo "Running migration...";
 
-docker-compose exec appwrite migrate
+docker-compose exec -T appwrite migrate
