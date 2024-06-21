@@ -283,7 +283,7 @@ services:
       - .env
 
   appwrite-usage:
-    entrypoint: usage
+    entrypoint: worker-usage
     container_name: appwrite-usage
     image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
     restart: always
@@ -296,7 +296,7 @@ services:
       - .env
 
   appwrite-schedule:
-    entrypoint: schedule
+    entrypoint: schedule-functions
     container_name: appwrite-schedule
     image: appwrite/appwrite:${SOFTWARE_VERSION_TAG}
     restart: always
