@@ -113,7 +113,9 @@ environments:
   - key: "_APP_STORAGE_DEVICE"
     value: "Local"
   - key: "_APP_EXECUTOR_HOST"
-    value: "http://proxy/v1"
+    value: "http://exc1/v1"
+  - key: "_APP_FUNCTIONS_RUNTIMES_NETWORK"
+    value: "runtimes"
   - key: "_APP_ASSISTANT_OPENAI_API_KEY"
     value: "YOUR_OPENAI_API_KEY"
 
