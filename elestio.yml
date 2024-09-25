@@ -118,7 +118,10 @@ environments:
     value: "runtimes"
   - key: "_APP_ASSISTANT_OPENAI_API_KEY"
     value: "YOUR_OPENAI_API_KEY"
-
+  - key: "_APP_EDITION"
+    value: "self-hosted"
+  - key: "_APP_CONSOLE_HOSTNAMES"
+    value: "[CI_CD_DOMAIN],*.[CI_CD_DOMAIN]"
 config:
   runTime: "dockerCompose"
   version: ""
